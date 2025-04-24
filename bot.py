@@ -15,7 +15,7 @@ import asyncio
 from dotenv import load_dotenv
 load_dotenv()
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN") print("TELEGRAM_TOKEN:", repr(TELEGRAM_TOKEN))
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN"); print("TELEGRAM_TOKEN:", repr(TELEGRAM_TOKEN))
 FACEBOOK_ACCESS_TOKEN = os.getenv("FACEBOOK_ACCESS_TOKEN")
 FACEBOOK_PAGE_ID = os.getenv("FACEBOOK_PAGE_ID")
 INSTAGRAM_ACCOUNT_ID = os.getenv("INSTAGRAM_ACCOUNT_ID")
