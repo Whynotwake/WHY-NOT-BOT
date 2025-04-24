@@ -1,0 +1,20 @@
+# Виртуальное окружение
+venv/
+env/
+.venv/
+
+# Файлы настроек
+.env
+.env.*
+*.env
+
+# Логи и временные файлы
+*.log
+__pycache__/
+*.pyc
+
+# Mac OS system
+.DS_Store
+
+# VSCode settings
+.vscode/
