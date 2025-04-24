@@ -1,5 +1,7 @@
 import logging
 import os
+print("TELEGRAM_TOKEN env:", os.environ.get("TELEGRAM_TOKEN"))
+print("TELEGRAM_TOKEN getenv:", os.getenv("TELEGRAM_TOKEN"))
 import uuid
 import threading
 from aiogram import Bot, Dispatcher, types, F
