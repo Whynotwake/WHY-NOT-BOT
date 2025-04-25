@@ -24,6 +24,7 @@ pending_messages = {}
 
 # Получаем входящее сообщение из Instagram и пересылаем в Telegram на согласование
 @app.route("/webhook", methods=["GET", "POST"])
+@app.route("/webhook/", methods=["GET", "POST"])
 def webhook():
     if request.method == "GET":
         # Для подтверждения webhook в Meta
