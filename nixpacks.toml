@@ -1,8 +1,13 @@
 [phases.setup]
-nixPkgs = ['python39Full']
+nixPkgs = ["python311", "python311Packages.pip", "gcc"]
 
 [phases.install]
 cmds = [
-  'pip install requests',
-  'pip install -r requirements.txt'
+  "python3 -m venv /opt/venv",
+  ". /opt/venv/bin/activate",
+  "pip install --upgrade pip",
+  "pip install -r requirements.txt"
 ]
+
+[start]
+cmd = "python bot.py"
