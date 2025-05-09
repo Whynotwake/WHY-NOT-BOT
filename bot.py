@@ -14,7 +14,7 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 FACEBOOK_ACCESS_TOKEN = os.getenv("FACEBOOK_ACCESS_TOKEN")
 INSTAGRAM_ACCOUNT_ID = os.getenv("INSTAGRAM_ACCOUNT_ID")
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
-ADMIN_TELEGRAM_ID = os.getenv("ADMIN_TELEGRAM_ID")
+ADMIN_TELEGRAM_ID = int(os.getenv("ADMIN_TELEGRAM_ID"))
 
 bot = Bot(token=TELEGRAM_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 dp = Dispatcher()
@@ -28,7 +28,7 @@ def webhook():
         mode = request.args.get('hub.mode')
         token = request.args.get('hub.verify_token')
         challenge = request.args.get('hub.challenge')
-        if mode and token and mode == "subscribe" and token == VERIFY_TOKEN:
+        if mode == "subscribe" and token == VERIFY_TOKEN:
             return challenge, 200
         return "Verification failed", 403
 
@@ -37,15 +37,16 @@ def webhook():
         for entry in data.get("entry", []):
             for change in entry.get("changes", []):
                 value = change.get("value", {})
-                if "messages" in value:
+                if "messages" in value and "contacts" in value:
                     for msg in value["messages"]:
-                        message_id = msg["id"]
+                        message_id = msg.get("id")
                         text = msg.get("text", {}).get("body", "")
                         from_user = value["contacts"][0]["profile"]["name"]
                         from_id = value["contacts"][0]["wa_id"]
-                        pending_messages[message_id] = (text, from_user, from_id)
-                        threading.Thread(target=notify_admin, args=(message_id, text, from_user)).start()
-        return jsonify(status="ok")
+                        if message_id and text:
+                            pending_messages[message_id] = (text, from_user, from_id)
+                            threading.Thread(target=notify_admin, args=(message_id, text, from_user)).start()
+        return jsonify(status="ok"), 200
 
 def notify_admin(message_id, text, from_user):
     kb = types.InlineKeyboardMarkup(inline_keyboard=[
@@ -53,23 +54,25 @@ def notify_admin(message_id, text, from_user):
         [types.InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{message_id}")]
     ])
     msg = f"Сообщение из Instagram от {from_user}:\n\n{text}\n\nОтправить ответ?"
-    asyncio.run(bot.send_message(ADMIN_TELEGRAM_ID, msg, reply_markup=kb))
+    asyncio.run(bot.send_message(chat_id=ADMIN_TELEGRAM_ID, text=msg, reply_markup=kb))
 
 @dp.callback_query()
 async def handle_callback(call: types.CallbackQuery):
     if call.data.startswith("allow_"):
-        msg_id = call.data.replace("allow_", "")
-        text, from_user, from_id = pending_messages.get(msg_id, ("", "", ""))
-        url = f"https://graph.facebook.com/v18.0/{INSTAGRAM_ACCOUNT_ID}/messages"
-        payload = {
-            "messaging_product": "whatsapp",
-            "to": from_id,
-            "type": "text",
-            "text": {"body": text}
-        }
-        headers = {"Authorization": f"Bearer {FACEBOOK_ACCESS_TOKEN}"}
-        requests.post(url, json=payload, headers=headers)
-        await call.answer("Ответ отправлен в Instagram.")
+        msg_id = call.data.split("_", 1)[1]
+        data = pending_messages.get(msg_id)
+        if data:
+            text, _, from_id = data
+            url = f"https://graph.facebook.com/v18.0/{INSTAGRAM_ACCOUNT_ID}/messages"
+            payload = {
+                "messaging_product": "whatsapp",
+                "to": from_id,
+                "type": "text",
+                "text": {"body": text}
+            }
+            headers = {"Authorization": f"Bearer {FACEBOOK_ACCESS_TOKEN}"}
+            requests.post(url, json=payload, headers=headers)
+            await call.answer("Ответ отправлен в Instagram.")
     elif call.data.startswith("reject_"):
         await call.answer("Сообщение отклонено.")
 
