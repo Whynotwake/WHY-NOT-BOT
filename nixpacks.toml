@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ['python39Full']
+
+[phases.install]
+cmds = [
+  'pip install requests',
+  'pip install -r requirements.txt'
+]
