@@ -28,6 +28,14 @@ with open("bot_memory.txt", encoding="utf-8") as f:
 @app.route("/webhook", methods=["GET", "POST"])
 @app.route("/webhook/", methods=["GET", "POST"])
 def webhook():
+    if request.method == "GET":
+        mode = request.args.get('hub.mode')
+        token = request.args.get('hub.verify_token')
+        challenge = request.args.get('hub.challenge')
+        if mode == "subscribe" and token == VERIFY_TOKEN:
+            return challenge, 200
+        return "Verification failed", 403
+
     if request.method == "POST":
         print("DEBUG: Webhook triggered")
         print("RAW JSON:", request.json)
@@ -49,31 +57,9 @@ def webhook():
 
                         if message_id and text:
                             pending_messages[message_id] = (text, from_user, from_id)
-                            threading.Thread(target=notify_admin, args=(message_id, text, from_user)).start()    if request.method == "GET":
-        mode = request.args.get('hub.mode')
-        token = request.args.get('hub.verify_token')
-        challenge = request.args.get('hub.challenge')
-        if mode == "subscribe" and token == VERIFY_TOKEN:
-            return challenge, 200
-        return "Verification failed", 403
-
-    if request.method == "POST":
-        data = request.json
-        for entry in data.get("entry", []):
-            for change in entry.get("changes", []):
-                value = change.get("value", {})
-                if "messages" in value and "contacts" in value:
-                    for msg in value["messages"]:
-                        message_id = msg.get("id")
-                        text = msg.get("text", {}).get("body", "")
-                        from_user = value["contacts"][0]["profile"]["name"]
-                        from_id = value["contacts"][0]["wa_id"]
-                        if message_id and text:
-                            pending_messages[message_id] = (text, from_user, from_id)
                             threading.Thread(target=notify_admin, args=(message_id, text, from_user)).start()
-        return jsonify(status="ok"), 200
 
-@app.route("/privacy-policy")
+        return jsonify(status="ok"), 200@app.route("/privacy-policy")
 def privacy_policy():
     return """
     <!DOCTYPE html>
