@@ -28,7 +28,28 @@ with open("bot_memory.txt", encoding="utf-8") as f:
 @app.route("/webhook", methods=["GET", "POST"])
 @app.route("/webhook/", methods=["GET", "POST"])
 def webhook():
-    if request.method == "GET":
+    if request.method == "POST":
+        print("DEBUG: Webhook triggered")
+        print("RAW JSON:", request.json)
+
+        data = request.json
+        for entry in data.get("entry", []):
+            for change in entry.get("changes", []):
+                value = change.get("value", {})
+                print("DEBUG: value =", value)
+
+                if "messages" in value and "contacts" in value:
+                    for msg in value["messages"]:
+                        print("DEBUG: message =", msg)
+                        message_id = msg.get("id")
+                        text = msg.get("text", {}).get("body", "")
+                        from_user = value["contacts"][0]["profile"].get("name", "Неизвестный")
+                        from_id = value["contacts"][0]["wa_id"]
+                        print(f"DEBUG: Parsed msg_id={message_id}, from={from_user}, text={text}")
+
+                        if message_id and text:
+                            pending_messages[message_id] = (text, from_user, from_id)
+                            threading.Thread(target=notify_admin, args=(message_id, text, from_user)).start()    if request.method == "GET":
         mode = request.args.get('hub.mode')
         token = request.args.get('hub.verify_token')
         challenge = request.args.get('hub.challenge')
