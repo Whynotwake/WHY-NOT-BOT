@@ -144,6 +144,6 @@ def run_flask():
 def start_aiogram():
     asyncio.run(dp.start_polling(bot))
 
-if name == "__main__":
+if __name__ == "__main__":
     threading.Thread(target=run_flask).start()
     start_aiogram()
