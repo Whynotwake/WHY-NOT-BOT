@@ -7,7 +7,6 @@ from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
 import requests
 from dotenv import load_dotenv
-from openai import OpenAI
 
 load_dotenv()
 
@@ -23,7 +22,6 @@ dp = Dispatcher()
 app = Flask(__name__)
 pending_messages = {}
 
-# memory
 with open("bot_memory.txt", encoding="utf-8") as f:
     bot_memory = f.read()
 
@@ -54,14 +52,55 @@ def webhook():
                             threading.Thread(target=notify_admin, args=(message_id, text, from_user)).start()
         return jsonify(status="ok"), 200
 
+@app.route("/privacy-policy")
+def privacy_policy():
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Privacy Policy</title>
+    </head>
+    <body>
+        <h1>Privacy Policy</h1>
+        <p><strong>Last Updated:</strong> 11.05.2025</p>
+        <h2>1. Data Collection</h2>
+        <p>Our app interacts with the Instagram API to receive messages from your Instagram account. As part of this process, we may collect the following data:</p>
+        <ul>
+            <li>The text of the messages received from your Instagram account.</li>
+            <li>Information about the users who sent those messages.</li>
+            <li>The date and time the messages were received.</li>
+        </ul>
+        <h2>2. Use of Data</h2>
+        <ul>
+            <li>To process and send messages to your server via webhook.</li>
+            <li>To analyze and monitor the app’s performance.</li>
+            <li>To ensure the proper functioning of the app and improve the user experience.</li>
+        </ul>
+        <h2>3. Data Transmission</h2>
+        <p>We use webhooks to send messages to the server you have specified. We ensure that the data is transmitted securely and used only for the described purposes.</p>
+        <h2>4. Data Storage</h2>
+        <p>We store only essential operational data, which resides on your server. We do not store messages on our server unless explicitly configured.</p>
+        <h2>5. Data Security</h2>
+        <p>We implement reasonable security measures to prevent unauthorized access, loss, or alteration.</p>
+        <h2>6. Data Access and Changes</h2>
+        <p>You may request access, modification, or deletion of your data by contacting us using the details below.</p>
+        <h2>7. Third-Party Services</h2>
+        <p>We use third-party APIs like Instagram. Please review their policies separately.</p>
+        <h2>8. Age Restrictions</h2>
+        <p>This app is not for use by individuals under 13 years of age.</p>
+        <h2>9. Changes to the Policy</h2>
+        <p>We may update this policy. Updates will appear here with the revision date.</p>
+    </body>
+    </html>
+    """
+
 def notify_admin(message_id, text, from_user):
     kb = types.InlineKeyboardMarkup(inline_keyboard=[
         [types.InlineKeyboardButton(text="✅ Разрешить", callback_data=f"allow_{message_id}")],
         [types.InlineKeyboardButton(text="❌ Отклонить", callback_data=f"reject_{message_id}")]
     ])
-    msg = f"Сообщение из Instagram от {from_user}:
-\n{text}
-\nОтправить ответ?"
+    msg = f"Сообщение из Instagram от {from_user}:\n{text}\n\nОтправить ответ?"
     asyncio.run(bot.send_message(chat_id=ADMIN_TELEGRAM_ID, text=msg, reply_markup=kb))
 
 @dp.callback_query()
@@ -100,8 +139,7 @@ async def handle_callback(call: types.CallbackQuery):
         await call.answer("Сообщение отклонено.")
 
 def run_flask():
-    app.run(host="0.0.0.
-            0", port=8080)
+    app.run(host="0.0.0.0", port=8080)
 
 def start_aiogram():
     asyncio.run(dp.start_polling(bot))
